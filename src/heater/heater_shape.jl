@@ -1,3 +1,4 @@
+using Interpolations
 export create_points_on_shape
 """ 
 create_points_on_shape(x::AbstractVector,Ntheta::Int64) -> Vector{Float64}, Vector{Float64}
