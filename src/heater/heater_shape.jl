@@ -1,4 +1,3 @@
-using Interpolations
 export create_points_on_shape
 """ 
 create_points_on_shape(x::AbstractVector,Ntheta::Int64) -> Vector{Float64}, Vector{Float64}
@@ -14,7 +13,7 @@ function create_points_on_shape(x::AbstractVector,gridConfig::constructGrids)
     c1 = x[4]
     c2 = x[5]
     r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:Ntheta]
-    interpolator_real = linear_interpolation(theta,real(r))
-    interpolator_imag = linear_interpolation(theta,imag(r))
+    interpolator_real = LinearInterpolation(theta,real(r))
+    interpolator_imag = LinearInterpolation(theta,imag(r))
     return interpolator_real, interpolator_imag
 end
