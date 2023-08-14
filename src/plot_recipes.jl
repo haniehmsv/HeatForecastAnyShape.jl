@@ -90,6 +90,19 @@ function show_singularity_samples(x_samples::Array,obs::AbstractObservationOpera
     f
 end
 
+function show_sampling_history!(ax,i,x_samples::Union{Array,BasicEnsembleMatrix};nskip=1,kwargs...)
+    sample_idx = 1:size(x_samples)[2]
+    scatter!(ax,sample_idx,x_samples[i,:];markersize=5,label="sample",kwargs...)
+end
+
+function show_sampling_history(i,x_samples::Union{Array,BasicEnsembleMatrix};nskip=1,ylims=(-2,2),kwargs...)
+    sample_idx = 1:size(x_samples)[2]
+    f = Figure()
+    ax = f[1,1] = Axis(f;limits=(0,length(sample_idx),ylims...),xlabel=L"iterations")
+    scatter!(ax,sample_idx,x_samples[i,:];markersize=5,label="sample",kwargs...)
+    f
+end
+
 
 function plot_expected_sourcefield!(ax,μ::Vector,Σ,obs::AbstractObservationOperator;xlims = (-2.5,2.5),Nx = 201, ylims = (-2.5,2.5), Ny = 201,kwargs...)
     xg = range(xlims...,length=Nx)

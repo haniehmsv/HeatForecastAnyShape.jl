@@ -28,11 +28,11 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	xg, yg = coordinates(T,g)
 	Temp = zeros(Ny)
 
-	for k in 1:Nq
+	@inbounds for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
-		for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
+		@inbounds for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
 			theta_g[i,j] = (yy-yq[k])>=0 ? atan((yy-yq[k]),(xx-xq[k])) : (atan((yy-yq[k]),(xx-xq[k]))+2π)
 			if ((xx-xq[k])^2+(yy-yq[k])^2) < ((r_real(theta_g[i,j])-xq[k])^2 + (r_imag(theta_g[i,j])-yq[k])^2)
 				T[i,j] = -qq[k]
@@ -73,11 +73,11 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	Temp = zeros_grid(cache)
 	xg, yg = coordinates(T,g)
 
-	for k in 1:Nq
+	@inbounds for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
-		for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
+		@inbounds for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
 			theta_g[i,j] = (yy-yq[k])>=0 ? atan((yy-yq[k]),(xx-xq[k])) : (atan((yy-yq[k]),(xx-xq[k]))+2π)
 			if ((xx-xq[k])^2+(yy-yq[k])^2) < ((r_real(theta_g[i,j])-xq[k])^2 + (r_imag(theta_g[i,j])-yq[k])^2)
 				T[i,j] = -qq[k]
