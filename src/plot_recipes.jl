@@ -143,7 +143,7 @@ end
 function singularity_ellipses!(ax,μ::Vector{T},Σ,obs::AbstractObservationOperator; kwargs...) where {T<:Real}
     N = number_of_singularities(obs.config)
     for j = 1:N
-        xidj, yidj, qidj, ridj = get_singularity_ids(j,obs.config)
+        xidj, yidj, qidj, c1idj, c1idj = get_singularity_ids(j,obs.config)
         μxj = μ[[xidj,yidj]]
         Σxxj = Σ[xidj:yidj,xidj:yidj]
         draw_ellipse!(ax,μxj,Σxxj;kwargs...)
