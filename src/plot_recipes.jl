@@ -11,7 +11,7 @@ export data_histogram, show_singularities, show_singularities!, show_singularity
         show_singularity_samples!, plot_expected_sourcefield, plot_expected_sourcefield!, singularity_ellipses,
         singularity_ellipses!, plot_temperature_field, plot_temperature_field!,
         plot_sensor_data, plot_sensor_data!, plot_sensors!, draw_ellipse_x!, 
-        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords
+        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords, show_sampling_history!
 
 """
 A palette of colors for plotting
