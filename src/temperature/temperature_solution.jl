@@ -32,12 +32,14 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
-		@inbounds for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
-			theta_g[i,j] = (yy-yq[k])>=0 ? atan((yy-yq[k]),(xx-xq[k])) : (atan((yy-yq[k]),(xx-xq[k]))+2π)
-			if ((xx-xq[k])^2+(yy-yq[k])^2) < ((r_real(theta_g[i,j])-xq[k])^2 + (r_imag(theta_g[i,j])-yq[k])^2)
-				T[i,j] = -qq[k]
-			end
-		end
+		delta_x = xg .- xq[k]
+		delta_y = yg .- yq[k]
+		theta_g .= atan.(delta_y', delta_x)
+		theta_g[theta_g .< 0] .+= 2π
+		r_diff = zeros_grid(cache)
+		r_diff = (delta_x.^2 .+ delta_y'.^2) .- ((r_real.(theta_g) .- xq[k]).^2 .+ (r_imag.(theta_g) .- yq[k]).^2)
+        T[r_diff .< 0] .= -qq[k]
+
 		inverse_laplacian!(T,cache)
 		Tfield = interpolatable_field(T,g)
 		Temp .+= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
@@ -77,12 +79,14 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
-		@inbounds for (j,yy) in enumerate(yg), (i,xx) in enumerate(xg)
-			theta_g[i,j] = (yy-yq[k])>=0 ? atan((yy-yq[k]),(xx-xq[k])) : (atan((yy-yq[k]),(xx-xq[k]))+2π)
-			if ((xx-xq[k])^2+(yy-yq[k])^2) < ((r_real(theta_g[i,j])-xq[k])^2 + (r_imag(theta_g[i,j])-yq[k])^2)
-				T[i,j] = -qq[k]
-			end
-		end
+		delta_x = xg .- xq[k]
+		delta_y = yg .- yq[k]
+		theta_g .= atan.(delta_y', delta_x)
+		theta_g[theta_g .< 0] .+= 2π
+		r_diff = zeros_grid(cache)
+		r_diff = (delta_x.^2 .+ delta_y'.^2) .- ((r_real.(theta_g) .- xq[k]).^2 .+ (r_imag.(theta_g) .- yq[k]).^2)
+        T[r_diff .< 0] .= -qq[k]
+
 		inverse_laplacian!(T,cache)
 		Temp .+= T
 	end
