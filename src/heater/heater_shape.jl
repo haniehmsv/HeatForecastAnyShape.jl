@@ -5,7 +5,7 @@ A function that generates equaly spaced points on the heater boundary based on F
     where c's are the Fourier coefficients. Here we consider the first three coefficients, c0, c1, and c2. It returns the interpolated points
     to cover all values of θ.
     """
-function create_points_on_shape(x::AbstractVector,gridConfig::constructGrids)
+@inline function create_points_on_shape(x::AbstractVector,gridConfig::constructGrids)
     @unpack Ntheta = gridConfig
     theta = collect(range(0,2π,Ntheta))
     c0 = x[1] + im*x[2]
