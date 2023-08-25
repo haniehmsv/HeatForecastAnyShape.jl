@@ -24,10 +24,10 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	c1q = x[c1_ids]
 	c2q = x[c2_ids]
 
-	T = zeros_grid(cache)
-	xg, yg = coordinates(T,g)
+	#T = zeros_grid(cache)
+	#xg, yg = coordinates(T,g)
 	Temp = zeros(Ny)
-
+#=
 	@inbounds for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
@@ -44,6 +44,7 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 		Tfield = interpolatable_field(T,g)
 		Temp .+= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
 	end
+	=#
 	return Temp
 end
 
