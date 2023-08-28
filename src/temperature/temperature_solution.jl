@@ -6,7 +6,7 @@ solves the temperature poisson equation numerically on grid g, and returns the v
 location of sensors imposed by Nq number of heaters.
 """
 
-function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids)
+@propagate_inbounds function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids)
 	@unpack config, sens = obs
 	@unpack Nq, state_id = config
 	@unpack g, cache, Ntheta = gridConfig
@@ -28,7 +28,7 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	xg, yg = coordinates(T,g)
 	Temp = zeros(Ny)
 
-	@inbounds for k in 1:Nq
+	for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
@@ -54,7 +54,7 @@ solves the temperature poisson equation numerically on grid g, and returns the v
 grid points in the domain.
 """
 
-function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids,matrix_output::Bool)
+@propagate_inbounds function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids,matrix_output::Bool)
 	@unpack config = obs
 	@unpack Nq, state_id = config
 	@unpack g, cache, Ntheta = gridConfig
@@ -75,7 +75,7 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	Temp = zeros_grid(cache)
 	xg, yg = coordinates(T,g)
 
-	@inbounds for k in 1:Nq
+	for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
 		theta_g = zeros_grid(cache)
