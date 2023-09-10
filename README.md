@@ -17,6 +17,6 @@ julia> using HeatForecastAnyShape
 ```
 
 ## Correspondence email
-[hanieh.mousavi93@ucla.edu](mailto:hanieh.mousavi93@ucla.edu)
+[hanieh.mousavi93@ucla.edu](mailto:hanieh.mousavi93@gmail.com)
 
 See [LICENSE.md](https://github.com/haniehmsv/HeatForecastAnyShape.jl/raw/main/LICENSE.md)
