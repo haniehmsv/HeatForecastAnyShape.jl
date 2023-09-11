@@ -7,13 +7,13 @@ A function that generates equaly spaced points on the heater boundary based on F
     """
 @inline function create_points_on_shape(x::AbstractVector,gridConfig::constructGrids)
     @unpack Ntheta = gridConfig
-    theta = collect(range(0,2π,Ntheta))
+    θ = collect(range(0,2π,Ntheta))
     pop!(θ)
     c0 = x[1] + im*x[2]
     q = x[3]
     c1 = x[4]
     c2 = x[5]
-    r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:(Ntheta-1)]
+    r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:length(θ)]
     interpolator_real = LinearInterpolation(theta,real(r))
     interpolator_imag = LinearInterpolation(theta,imag(r))
     return interpolator_real, interpolator_imag
