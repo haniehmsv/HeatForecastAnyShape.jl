@@ -13,8 +13,8 @@ A function that generates equaly spaced points on the heater boundary based on F
     q = x[3]
     c1 = x[4]
     c2 = x[5]
-    r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:length(θ)]
-    interpolator_real = LinearInterpolation(theta,real(r))
-    interpolator_imag = LinearInterpolation(theta,imag(r))
+    r = [c0 + c1*exp(1im*θ[i]) + c2*exp(2im*θ[i]) for i in 1:length(θ)]
+    interpolator_real = LinearInterpolation(θ,real(r))
+    interpolator_imag = LinearInterpolation(θ,imag(r))
     return interpolator_real, interpolator_imag
 end
