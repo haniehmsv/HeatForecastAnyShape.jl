@@ -31,13 +31,13 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	@inbounds for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
-		theta_g = zeros_grid(cache)
-		delta_x = xg .- xq[k]
-		delta_y = yg .- yq[k]
-		theta_g .= atan.(delta_y', delta_x)
-		theta_g[theta_g .< 0] .+= 2π
+		θg = zeros_grid(cache)
+		Δx = xg .- xq[k]
+		Δy = yg .- yq[k]
+		θg .= atan.(Δy', Δx)
+		θg[θg .< 0] .+= 2π
 		r_diff = zeros_grid(cache)
-		r_diff = (delta_x.^2 .+ delta_y'.^2) .- ((r_real.(theta_g) .- xq[k]).^2 .+ (r_imag.(theta_g) .- yq[k]).^2)
+		r_diff = (Δx.^2 .+ Δy'.^2) .- ((r_real.(θg) .- xq[k]).^2 .+ (r_imag.(θg) .- yq[k]).^2)
         T[r_diff .< 0] .= -qq[k]
 
 		inverse_laplacian!(T,cache)
@@ -78,13 +78,13 @@ function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g
 	@inbounds for k in 1:Nq
 		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
 		T = zeros_grid(cache)
-		theta_g = zeros_grid(cache)
-		delta_x = xg .- xq[k]
-		delta_y = yg .- yq[k]
-		theta_g .= atan.(delta_y', delta_x)
-		theta_g[theta_g .< 0] .+= 2π
+		θg = zeros_grid(cache)
+		Δx = xg .- xq[k]
+		Δy = yg .- yq[k]
+		θg .= atan.(Δy', Δx)
+		θg[θg .< 0] .+= 2π
 		r_diff = zeros_grid(cache)
-		r_diff = (delta_x.^2 .+ delta_y'.^2) .- ((r_real.(theta_g) .- xq[k]).^2 .+ (r_imag.(theta_g) .- yq[k]).^2)
+		r_diff = (Δx.^2 .+ Δy'.^2) .- ((r_real.(θg) .- xq[k]).^2 .+ (r_imag.(θg) .- yq[k]).^2)
         T[r_diff .< 0] .= -qq[k]
 
 		inverse_laplacian!(T,cache)

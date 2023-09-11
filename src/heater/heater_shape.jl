@@ -8,7 +8,6 @@ A function that generates equaly spaced points on the heater boundary based on F
 @inline function create_points_on_shape(x::AbstractVector,gridConfig::constructGrids)
     @unpack Ntheta = gridConfig
     θ = collect(range(0,2π,Ntheta))
-    pop!(θ)
     c0 = x[1] + im*x[2]
     q = x[3]
     c1 = x[4]
