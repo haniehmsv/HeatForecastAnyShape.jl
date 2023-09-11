@@ -89,7 +89,6 @@ This function would typically be used before and after the analysis step to enfo
 """
 state_filter!(x, obs::TemperatureObservations) = flip_symmetry_state_filter!(x, obs.config)
 
-# This only works if the vortex strength transform is the identity
 function flip_symmetry_state_filter!(x, config::HeaterConfig)
 	@unpack Nq, state_id = config
 
