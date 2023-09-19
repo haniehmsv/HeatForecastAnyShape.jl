@@ -29,7 +29,6 @@ include("DA/classification.jl")
 include("DA/MCMC.jl")
 
 include("temperature/grids.jl")
-include("heater/heater_shape.jl")
 include("heater/heater.jl")
 include("heater/heater_clusters.jl")
 include("heater/heater_forecast_observation.jl")
