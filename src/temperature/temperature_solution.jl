@@ -58,7 +58,7 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     prescribed_surface_average!(fb,sys)
 
     # Correction
-    ImmersedLayers.interpolate!(s,fstar,base_cache)
+    interpolate!(s,fstar,base_cache)
     s .= fb - s
     s .= -(S\s);
 
