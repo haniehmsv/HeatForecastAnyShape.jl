@@ -64,13 +64,13 @@ function setup_sensors(Nsens;layout=(:line,1.0))
   return sens
 end
 
-function setup_estimator(sens,bounds,config::SingularityConfig,ystar,Σϵ,gridConfig)
+function setup_estimator(sens,bounds,config::SingularityConfig,ystar,Σϵ,gridConfig,prob,sys::ILMSystem)
     t = 0.0
 
     obs = TemperatureObservations(sens,config)
 
     function logp̃_fcn(x::Vector)
-        logp̃ = normal_loglikelihood(x,t,ystar,Σϵ,obs,gridConfig)
+        logp̃ = normal_loglikelihood(x,t,ystar,Σϵ,obs,gridConfig,prob,sys)
         logp̃ += log_uniform(x,bounds)
     end
 

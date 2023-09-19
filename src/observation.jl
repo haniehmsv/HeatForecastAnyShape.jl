@@ -21,7 +21,7 @@ state_length(::AbstractObservationOperator{Nx,Ny}) where {Nx,Ny} = Nx
 For a given state `x` at time `t`, return the log of the likelihood function,
 given observations `ystar`, noise covariance `Σϵ`, and observation structure `obs`.
 """
-function normal_loglikelihood(x,t,ystar,Σϵ,obs::AbstractObservationOperator,gridConfig)
+function normal_loglikelihood(x,t,ystar,Σϵ,obs::AbstractObservationOperator,gridConfig,prob,sys::ILMSystem)
     y = observations(x,t,obs,gridConfig,prob,sys)
     #loss = norm(ystar-y .- mean(ystar-y),Σϵ)
     loss = norm(ystar-y,Σϵ)
