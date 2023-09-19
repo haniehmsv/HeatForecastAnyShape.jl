@@ -63,8 +63,8 @@ function TemperatureObservations(sens::AbstractVector,config::HeaterConfig)
     return TemperatureObservations{5*config.Nq,length(sens),typeof(sens),typeof(config)}(sens,config)
 end
 
-function observations(x::AbstractVector,t,obs::TemperatureObservations,gridConfig::constructGrids)
-  return _temperature(x,obs,gridConfig)
+function observations(x::AbstractVector,t,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem)
+  return _temperature(x,obs,gridConfig,prob,sys)
 end
 
 function jacob!(J,x::AbstractVector,t,obs::TemperatureObservations)
@@ -72,8 +72,8 @@ function jacob!(J,x::AbstractVector,t,obs::TemperatureObservations)
     return _temperature_jacobian!(J,sens,x,config)
 end
 
-_temperature(x,obs::TemperatureObservations,gridConfig::constructGrids) = analytical_temperature(x,obs,gridConfig)
-_temperature_jacobian!(J,sens,x,config::HeaterConfig) = analytical_temperature_jacobian!(J,sens,x,config)
+_temperature(x,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem) = TemperatureSolution(x,gridConfig,obs,prob,sys)
+_temperature_jacobian!(J,sens,x,config::HeaterConfig) = temperature_jacobian!(J,sens,x,config)
 
 
 physical_space_sensors(obs::TemperatureObservations) = physical_space_sensors(obs.sens,obs.config)

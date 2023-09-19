@@ -1,10 +1,10 @@
-export analytical_temperature_jacobian!
+export temperature_jacobian!
 
 
-analytical_temperature_jacobian!(J,target::AbstractVector{<:ComplexF64}, source::AbstractVector,config::HeaterConfig;kwargs...) =
-			analytical_temperature_jacobian!(J,target,source,config.state_id,config.Nq;kwargs...)
+temperature_jacobian!(J,target::AbstractVector{<:ComplexF64}, source::AbstractVector,config::HeaterConfig;kwargs...) =
+			temperature_jacobian!(J,target,source,config.state_id,config.Nq;kwargs...)
 
-function analytical_temperature_jacobian!(J,target::AbstractVector{<:ComplexF64}, source::AbstractVector, state_id::Dict,Nq::Int64; kwargs...)
+function temperature_jacobian!(J,target::AbstractVector{<:ComplexF64}, source::AbstractVector, state_id::Dict,Nq::Int64; kwargs...)
 	Nx = state_length(state_id)
 	Ny = size(target, 1)
   #J = zeros(Float64,Ny,Nx)

@@ -1,4 +1,4 @@
-export analytical_temperature
+export setup_prob_and_sys, TemperatureSolution
 
 """
 analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g::PhysicalGrid)-> Vector{float64}
@@ -6,89 +6,137 @@ solves the temperature poisson equation numerically on grid g, and returns the v
 location of sensors imposed by Nq number of heaters.
 """
 
-function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids)
-	@unpack config, sens = obs
-	@unpack Nq, state_id = config
-	@unpack g, cache, Ntheta = gridConfig
-	Ny = length(sens)
+@ilmproblem DirichletPoisson scalar
 
-	x_ids = state_id["heater x"]
-  	y_ids = state_id["heater y"]
-  	q_ids = state_id["heater q"]
-  	c1_ids = state_id["heater c1"]
-	c2_ids = state_id["heater c2"]
+"""
+Constructing extra cache for the problem
+"""
+mutable struct DirichletPoissonCache{SMT,CMT,FRT,ST,FT} <: ImmersedLayers.AbstractExtraILMCache
+    S :: SMT
+    C :: CMT
+    forcing_cache :: FRT
+    fb :: ST
+    fstar :: FT
+ end
 
-	xq = x[x_ids]
-	yq = x[y_ids]
-	qq = x[q_ids]
-	c1q = x[c1_ids]
-	c2q = x[c2_ids]
-
-	T = zeros_grid(cache)
-	xg, yg = coordinates(T,g)
-	Temp = zeros(Ny)
-
-	@inbounds for k in 1:Nq
-		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
-		T = zeros_grid(cache)
-		θg = zeros_grid(cache)
-		Δx = xg .- xq[k]
-		Δy = yg .- yq[k]
-		θg .= atan.(Δy', Δx)
-		θg[θg .< 0] .+= 2π
-		r_diff = zeros_grid(cache)
-		r_diff = (Δx.^2 .+ Δy'.^2) .- ((r_real.(θg) .- xq[k]).^2 .+ (r_imag.(θg) .- yq[k]).^2)
-        T[r_diff .< 0] .= -qq[k]
-
-		inverse_laplacian!(T,cache)
-		Tfield = interpolatable_field(T,g)
-		Temp .+= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
-	end
-	return Temp
+"""
+  Extending prob_cache function in the ImmersedLayers Pkg to include the extra cache in the problem, for dispatch purposes
+"""
+function ImmersedLayers.prob_cache(prob::DirichletPoissonProblem,base_cache::BasicILMCache)
+    @unpack phys_params, forcing = prob
+    S = create_RTLinvR(base_cache)
+    C = create_surface_filter(base_cache)
+    forcing_cache = ForcingModelAndRegion(forcing["heating models"],base_cache)
+    fb = zeros_surface(base_cache)
+    fstar = zeros_grid(base_cache)
+    DirichletPoissonCache(S,C,forcing_cache,fb,fstar)
 end
 
+"""
+Extending solve function in the ImmersedLayers Pkg to include the forcing model in the problem, for dispatch purposes
+"""
+function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
+    @unpack bc, forcing, phys_params, extra_cache, base_cache = sys
+    @unpack gdata_cache = base_cache
+    @unpack S, C, forcing_cache, fb, fstar = extra_cache
+
+    f = zeros_grid(base_cache)
+    s = zeros_surface(base_cache)
+
+    # apply_forcing! evaluates the forcing field on the grid and put
+    # the result in the `gdata_cache`.
+    fill!(gdata_cache,0.0)
+    apply_forcing!(gdata_cache,f,0.0,forcing_cache,phys_params)
+
+    # Get the prescribed jump in boundary data across the interface using
+    # the functions we supplied via the `Dict`.
+    prescribed_surface_jump!(fb,sys)
+
+    # Evaluate the double-layer term and add it to the right-hand side
+    surface_divergence!(fstar,fb,base_cache)
+    fstar .+= gdata_cache
+
+    # Intermediate solution
+    inverse_laplacian!(fstar,base_cache)
+
+    # Get the prescribed average of boundary data on the interface using
+    # the functions we supplied via the `Dict`.
+    prescribed_surface_average!(fb,sys)
+
+    # Correction
+    interpolate!(s,fstar,base_cache)
+    s .= fb - s
+    s .= -(S\s);
+
+    regularize!(f,s,base_cache)
+    inverse_laplacian!(f,base_cache)
+    f .+= fstar;
+
+    return f, C^6*s
+end
 
 """
-analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g::PhysicalGrid,matrix_output::Bool)-> Matrix{float64}
-solves the temperature poisson equation numerically on grid g, and returns the value of temperature at all
-grid points in the domain.
+	Constructing forcing cache for the problem
 """
+function forcing_region(x::AbstractVector,Nθ::Int64,config::HeaterConfig)
+    @unpack Nq, state_id = config
+    x_ids = state_id["heater x"]
+    y_ids = state_id["heater y"]
+    q_ids = state_id["heater q"]
+    c1_ids = state_id["heater c1"]
+    c2_ids = state_id["heater c2"]
 
-function analytical_temperature(x::AbstractVector,obs::TemperatureObservations,gridConfig::constructGrids,matrix_output::Bool)
+    xq = x[x_ids]
+    yq = x[y_ids]
+    qq = x[q_ids]
+    c1q = x[c1_ids]
+    c2q = x[c2_ids]
+
+    z(θ,c0,c1,c2) = c0 + c1*exp(im*θ) + c2*exp(2*im*θ)
+    θ = collect(range(0,2π,length=Nθ))
+    pop!(θ)
+    fregion = BodyList()
+    afm = AbstractForcingModel[]	#area forcing model
+
+    for k in 1:Nq
+        zp = z.(θ,xq[k]+im*yq[k],c1q[k],c2q[k])
+        x, y = real(zp), imag(zp)
+        push!(fregion,BasicBody(x,y))
+        function area_strengths!(σ,T,t,fr::AreaRegionCache,phys_params)
+            σ .= qq[k] #phys_params["areaheater_flux"]
+        end
+        push!(afm, AreaForcingModel(fregion[k],area_strengths!))
+    end
+    forcing_dict = Dict{String, Vector{AbstractForcingModel}}("heating models" => afm)
+    return forcing_dict
+end
+
+function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig)
+	@unpack g, Nθ = gridConfig
+    forcing_dict = forcing_region(x,Nθ,config)
+    prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    sys = construct_system(prob)
+    return prob, sys
+end
+
+function TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)
 	@unpack config = obs
-	@unpack Nq, state_id = config
-	@unpack g, cache, Ntheta = gridConfig
+    forcing_dict = forcing_region(x,Nθ,config)
+    sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
+    f, s = solve(prob,sys)
+    return f
+end
 
-	x_ids = state_id["heater x"]
-  	y_ids = state_id["heater y"]
-  	q_ids = state_id["heater q"]
-  	c1_ids = state_id["heater c1"]
-	c2_ids = state_id["heater c2"]
+function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob,sys::ILMSystem)
+	@unpack config, sens = obs
+	@unpack g, cache, Nθ = gridConfig
+	Ny = length(sens)
+	T_sens = zeros(Ny)
 
-	xq = x[x_ids]
-	yq = x[y_ids]
-	qq = x[q_ids]
-	c1q = x[c1_ids]
-	c2q = x[c2_ids]
-
-	T = zeros_grid(cache)
-	Temp = zeros_grid(cache)
-	xg, yg = coordinates(T,g)
-
-	@inbounds for k in 1:Nq
-		r_real, r_imag = create_points_on_shape(x[5k-4:5k],gridConfig)
-		T = zeros_grid(cache)
-		θg = zeros_grid(cache)
-		Δx = xg .- xq[k]
-		Δy = yg .- yq[k]
-		θg .= atan.(Δy', Δx)
-		θg[θg .< 0] .+= 2π
-		r_diff = zeros_grid(cache)
-		r_diff = (Δx.^2 .+ Δy'.^2) .- ((r_real.(θg) .- xq[k]).^2 .+ (r_imag.(θg) .- yq[k]).^2)
-        T[r_diff .< 0] .= -qq[k]
-
-		inverse_laplacian!(T,cache)
-		Temp .+= T
-	end
-	return Temp
+    forcing_dict = forcing_region(x,Nθ,config)
+    sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
+    f, s = solve(prob,sys)
+	Tfield = interpolatable_field(f,g)
+	T_sens .= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
+    return T_sens
 end

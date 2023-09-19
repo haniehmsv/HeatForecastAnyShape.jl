@@ -22,7 +22,7 @@ For a given state `x` at time `t`, return the log of the likelihood function,
 given observations `ystar`, noise covariance `Σϵ`, and observation structure `obs`.
 """
 function normal_loglikelihood(x,t,ystar,Σϵ,obs::AbstractObservationOperator,gridConfig)
-    y = observations(x,t,obs,gridConfig)
+    y = observations(x,t,obs,gridConfig,prob,sys)
     #loss = norm(ystar-y .- mean(ystar-y),Σϵ)
     loss = norm(ystar-y,Σϵ)
     return -loss^2/2
@@ -55,7 +55,7 @@ Compute the observation function `h` for state `x` at time `t`.
 The function `h` should take as inputs a vector of measurement points (`sens`), a vector of heaters,
 and the configuration data `config`.
 """
-function observations(x::AbstractVector,t,obs::AbstractObservationOperator,gridConfig) end
+function observations(x::AbstractVector,t,obs::AbstractObservationOperator,gridConfig,prob,sys::ILMSystem) end
 
 """
     observations!(Y::EnsembleMatrix,X::EnsembleMatrix,t::Float64,obs::AbstractObservationOperator)
@@ -64,9 +64,9 @@ Compute the observation function `h` for each of the states in `X` and place the
 The function `h` should take as inputs a Ny-dimensional vector of measurement points (`sens`), a vector of vortices,
 and the configuration data `config`.
 """
-function observations!(Y::EnsembleMatrix{Ny,Ne},X::EnsembleMatrix{Nx,Ne},t,obs::AbstractObservationOperator{Nx,Ny},gridConfig) where {Nx,Ny,Ne}
+function observations!(Y::EnsembleMatrix{Ny,Ne},X::EnsembleMatrix{Nx,Ne},t,obs::AbstractObservationOperator{Nx,Ny},gridConfig,prob,sys::ILMSystem) where {Nx,Ny,Ne}
   for j in 1:Ne
-      Y(j) .= observations(X(j),t,obs,gridConfig)
+      Y(j) .= observations(X(j),t,obs,gridConfig,prob,sys)
   end
   return Y
 end

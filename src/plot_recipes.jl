@@ -174,9 +174,9 @@ function singularity_ellipses(μ,Σ,obs::AbstractObservationOperator; kwargs...)
   f
 end
 
-function plot_temperature_field!(ax,x::Vector,obs::TemperatureObservations,gridConfig::constructGrids;kwargs...)
-    T = analytical_temperature(x,obs,gridConfig,true)
-    @unpack g = gridConfig
+function plot_temperature_field!(ax,x::Vector,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem;kwargs...)
+    @unpack Nθ, g = gridConfig
+    T = TemperatureSolution(x,Nθ,obs,prob,sys)
     xg, yg = coordinates(T,g)
     plot_temperature_field!(ax,collect(xg),collect(yg),Matrix(T),obs;kwargs...)
 end
@@ -186,10 +186,10 @@ end
 
 For a given state `x`, calculate the pressure field on a grid. The optional arguments allow one to specify the dimensions of the grid.
 """
-function plot_temperature_field(x::Vector,obs::TemperatureObservations,gridConfig::constructGrids; kwargs...)
+function plot_temperature_field(x::Vector,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem;kwargs...)
     f = Figure()
     ax = f[1,1] = Axis(f;aspect=DataAspect(),xlabel=L"x",ylabel=L"y")
-    plot_temperature_field!(ax,x,obs,gridConfig;kwargs...)
+    plot_temperature_field!(ax,x,obs,gridConfig,prob,sys;kwargs...)
     f
 end
 
@@ -199,9 +199,9 @@ function plot_temperature_field!(ax,xg::AbstractVector,yg::AbstractVector,T::Mat
 end
 
 
-function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids; sensor_noise=zero(ystar))
+function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids,prob,sys::ILMSystem; sensor_noise=zero(ystar))
     plot_sensor_data!(ax,ystar,obs;sensor_noise=sensor_noise)
-    y_est = observations(x,t,obs,gridConfig)
+    y_est = observations(x,t,obs,gridConfig,prob,sys)
     scatter!(ax,y_est,markersize=15,color=:transparent,strokewidth=1,label="estimate")
 end
 

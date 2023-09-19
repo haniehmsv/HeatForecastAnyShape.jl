@@ -9,7 +9,7 @@ with noise `ϵmeas`. The default layout is a `:line` extending from -1.0 to 1.0 
 It can also be a circle, e.g. of radius 2, `layout=(:circle,2.0)`.
 By default the noise is not added to the data, but can be if `add_noise` is set to true.
 """
-function get_truth_data(Nsens,ϵmeas,x_true::Vector,config_true::SingularityConfig,gridConfig::constructGrids;layout=(:line,1.0),add_noise=false)
+function get_truth_data(Nsens,ϵmeas,x_true::Vector,config_true::SingularityConfig,gridConfig::constructGrids,prob,sys;layout=(:line,1.0),add_noise=false)
 
     t = 0.0
 
@@ -19,7 +19,7 @@ function get_truth_data(Nsens,ϵmeas,x_true::Vector,config_true::SingularityConf
     obs_true = TemperatureObservations(sens,config_true)
 
     # evaluate data without noise
-    ystar0 = observations(x_true,t,obs_true,gridConfig)
+    ystar0 = observations(x_true,t,obs_true,gridConfig,prob,sys)
 
     Σϵ = Diagonal(ϵmeas^2*ones(length(sens)))
 

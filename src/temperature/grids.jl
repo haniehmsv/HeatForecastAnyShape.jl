@@ -18,14 +18,14 @@ struct constructGrids{XT,CT} <: AbstractGrids
     cache::CT
 
     "Number of points on heater boundary"
-    Ntheta::Int64
+    Nθ::Int64
 end
 
-function constructGrids(Δx,bounds;Ntheta=500)
+function constructGrids(Δx,bounds;Nθ=500)
     xlim = bounds[1]
     ylim = bounds[2]
     g = PhysicalGrid(xlim,ylim,Δx)
     cache = SurfaceScalarCache(g)
     CacheType = typeof(cache)
-    constructGrids{typeof(xlim), CacheType}(Δx,xlim,ylim,g,cache,Ntheta)
+    constructGrids{typeof(xlim), CacheType}(Δx,xlim,ylim,g,cache,Nθ)
 end
