@@ -1,11 +1,5 @@
 export setup_prob_and_sys, TemperatureSolution
 
-"""
-analytical_temperature(x::AbstractVector,obs::TemperatureObservations,g::PhysicalGrid)-> Vector{float64}
-solves the temperature poisson equation numerically on grid g, and returns the value of temperature at the
-location of sensors imposed by Nq number of heaters.
-"""
-
 @ilmproblem DirichletPoisson scalar
 
 """
@@ -119,6 +113,11 @@ function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bc
     return prob, sys
 end
 
+"""
+TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)-> Matrix{float64}
+solves the temperature poisson equation numerically on grid g, and returns the value of temperature at the
+grid points.
+"""
 function TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)
 	@unpack config = obs
     forcing_dict = forcing_region(x,Nθ,config)
@@ -127,6 +126,11 @@ function TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObserv
     return f
 end
 
+"""
+TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob,sys::ILMSystem)-> Vector{float64}
+solves the temperature poisson equation numerically on grid g, and returns the value of temperature at the
+location of sensors imposed by Nq number of heaters.
+"""
 function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob,sys::ILMSystem)
 	@unpack config, sens = obs
 	@unpack g, cache, Nθ = gridConfig
