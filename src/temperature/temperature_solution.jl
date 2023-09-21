@@ -1,4 +1,4 @@
-export setup_prob_and_sys, TemperatureSolution, _create_fregion_and_force_model
+export setup_prob_and_sys, TemperatureSolution
 
 @ilmproblem DirichletPoisson scalar
 
