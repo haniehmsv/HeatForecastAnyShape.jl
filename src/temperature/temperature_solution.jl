@@ -95,7 +95,7 @@ function forcing_region(x::AbstractVector,Nθ::Int64,config::HeaterConfig)
 
     θ = collect(range(0,2π,length=Nθ))
     pop!(θ)
-    afm = [AreaForcingModel(_create_fregion_and_force_model(xq[k],yq[k],qq[k],c1q[k],c2q[k],θ)) for k in 1:Nq]	#area forcing model
+    afm = [AreaForcingModel(_create_fregion_and_force_model(xq[k],yq[k],qq[k],c1q[k],c2q[k],θ)...) for k in 1:Nq]	#area forcing model
     forcing_dict = Dict{String, Vector{AbstractForcingModel}}("heating models" => afm)
     return forcing_dict
 end
