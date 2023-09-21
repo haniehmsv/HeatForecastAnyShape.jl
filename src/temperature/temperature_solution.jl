@@ -70,6 +70,13 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
 end
 
 """
+z coordinates of points on the forcing region
+"""
+function z(θ,c0,c1,c2)
+	return c0 + c1*exp(im*θ) + c2*exp(2*im*θ) 
+end
+
+"""
 	Constructing forcing cache for the problem
 """
 function forcing_region(x::AbstractVector,Nθ::Int64,config::HeaterConfig)
@@ -86,23 +93,21 @@ function forcing_region(x::AbstractVector,Nθ::Int64,config::HeaterConfig)
     c1q = x[c1_ids]
     c2q = x[c2_ids]
 
-    z(θ,c0,c1,c2) = c0 + c1*exp(im*θ) + c2*exp(2*im*θ)
     θ = collect(range(0,2π,length=Nθ))
     pop!(θ)
-    fregion = BodyList()
-    afm = AbstractForcingModel[]	#area forcing model
-
-    for k in 1:Nq
-        zp = z.(θ,xq[k]+im*yq[k],c1q[k],c2q[k])
-        x, y = real(zp), imag(zp)
-        push!(fregion,BasicBody(x,y))
-        function area_strengths!(σ,T,t,fr::AreaRegionCache,phys_params)
-            σ .= qq[k] #phys_params["areaheater_flux"]
-        end
-        push!(afm, AreaForcingModel(fregion[k],area_strengths!))
-    end
+    afm = [AreaForcingModel(_create_fregion_and_force_model(xq[k],yq[k],qq[k],c1q[k],c2q[k],θ)) for k in 1:Nq]	#area forcing model
     forcing_dict = Dict{String, Vector{AbstractForcingModel}}("heating models" => afm)
     return forcing_dict
+end
+
+function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
+	zp = z.(θ,xqk+im*yqk,c1qk,c2qk)
+    x, y = real(zp), imag(zp)
+    fregion = BasicBody(x,y)
+    function area_strengths!(σ,T,t,fr::AreaRegionCache,phys_params)
+            σ .= qqk #phys_params["areaheater_flux"]
+    end
+	return fregion, area_strengths!
 end
 
 function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig)
