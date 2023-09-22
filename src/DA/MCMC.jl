@@ -80,7 +80,7 @@ metropolis(zi::Vector{Float64},nsamp::Integer,logp̃::Function,propvar,nchain;bu
       metropolis([zi for n = 1:nchain],nsamp,logp̃,[propvar/β[i] for i = 1:nchain];burnin=burnin,β=β,process_state=process_state)
 
 
-metropolis(chains::MetropolisSolution,nsamp::Integer,logp̃,propvar;β = 5.0.^(range(0,1-numchains(chains),length=numchains(chains))),kwargs...) =
+metropolis(chains::MetropolisSolution,nsamp::Integer,logp̃,propvar;β = 10.0.^(range(0,1-numchains(chains),length=numchains(chains))),kwargs...) =
       metropolis([copy(x[:,end]) for x in chains.data],nsamp,logp̃,[propvar/β[i] for i = 1:numchains(chains)];β = β,kwargs...)
 
 
