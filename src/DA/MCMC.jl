@@ -94,7 +94,7 @@ function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propv
     swapaccepts = zeros(Int,nchain-1)
 
     # Burn-in period. Don't collect data
-    for j = 1:nchain
+    Threads.@threads for j = 1:nchain
         z = copy(zi[j])
         accept = false
         for i in 1:burnin-1
@@ -105,7 +105,8 @@ function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propv
         accept_data[j][1] = accept
         logp_data[j][1] = β[j]*logp̃(z)
     end
-    for i in 2:nsamp-burnin+1
+    
+    Threads.@threads for i in 2:nsamp-burnin+1
       for j = 1:nchain
         z, accept = mhstep(z_data[j][:,i-1],logp̃,propvars[j],β[j])
         newz = process_state(copy(z))
