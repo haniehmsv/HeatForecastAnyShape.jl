@@ -106,8 +106,8 @@ function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propv
         logp_data[j][1] = β[j]*logp̃(z)
     end
     
-    Threads.@threads for i in 2:nsamp-burnin+1
-      for j = 1:nchain
+    for i in 2:nsamp-burnin+1
+      Threads.@threads for j = 1:nchain
         z, accept = mhstep(z_data[j][:,i-1],logp̃,propvars[j],β[j])
         newz = process_state(copy(z))
         z_data[j][:,i] = newz
