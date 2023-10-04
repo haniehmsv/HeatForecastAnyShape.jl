@@ -83,7 +83,7 @@ metropolis(zi::Vector{Float64},nsamp::Integer,logp̃::Function,propvar,nchain;bu
 metropolis(chains::MetropolisSolution,nsamp::Integer,logp̃,propvar;β = 5.0.^(range(0,1-numchains(chains),length=numchains(chains))),kwargs...) =
       metropolis([copy(x[:,end]) for x in chains.data],nsamp,logp̃,[propvar/β[i] for i = 1:numchains(chains)];β = β,kwargs...)
 
-
+#=
 function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propvars::Vector{S},burnin,β,process_state) where {T <: Float64, S}
     nchain = length(zi)
     n = length(first(zi))
@@ -140,3 +140,61 @@ function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propv
     end
     return z_data, accept_data, logp_data, swaps, swapaccepts
 end
+=#
+
+function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propvars::Vector{S},burnin,β,process_state) where {T <: Float64, S}
+  nchain = length(zi)
+  n = length(first(zi))
+  z_data = [zeros(n,nsamp-burnin+1) for j in 1:nchain]
+  accept_data = [zeros(Bool,nsamp-burnin+1) for j in 1:nchain]
+  logp_data = [zeros(Float64,nsamp-burnin+1) for j in 1:nchain]
+  swaps = zeros(Int,nchain-1)
+  swapaccepts = zeros(Int,nchain-1)
+  z = copy(zi)
+  accept = [false for k in 1:nchain]
+
+  # Burn-in period. Don't collect data
+  Threads.@threads for j = 1:nchain
+      for i in 1:burnin-1
+          z[j], accept[j] = mhstep(z[j],logp̃,propvars[j],β[j])
+          z[j] = process_state(z[j])
+      end
+      z_data[j][:,1] = copy(z[j])
+      accept_data[j][1] = accept[j]
+      logp_data[j][1] = β[j]*logp̃(z[j])
+  end
+  
+  for i in 2:nsamp-burnin+1
+    Threads.@threads for j = 1:nchain
+      z[j], accept[j] = mhstep(z_data[j][:,i-1],logp̃,propvars[j],β[j])
+      z_data[j][:,i] = process_state(copy(z[j]))
+      accept_data[j][i] = accept[j]
+      logp_data[j][i] = β[j]*logp̃(z[j])
+    end
+
+    # Look for swaps, choosing two random ones
+    if nchain > 1
+      chainj = rand(1:nchain-1)
+      swaps[chainj] += 1
+      k = rand(1:nchain-1)
+      chaink = mod(chainj+k-1,nchain)+1
+      zj = copy(z_data[chainj][:,i])
+      zk = copy(z_data[chaink][:,i])
+      logjzj = logp_data[chainj][i]
+      logkzk = logp_data[chaink][i]
+      logjzk = β[chainj]*logp̃(zk)
+      logkzj = β[chaink]*logp̃(zj)
+      a = logjzk + logkzj - logjzj - logkzk
+      swapaccept = a > log(rand())
+      if swapaccept
+        z_data[chainj][:,i] .= zk
+        z_data[chaink][:,i] .= zj
+        logp_data[chainj][i] = logkzj
+        logp_data[chaink][i] = logjzj
+        swapaccepts[chainj] += 1
+      end
+    end
+  end
+  return z_data, accept_data, logp_data, swaps, swapaccepts
+end
+
