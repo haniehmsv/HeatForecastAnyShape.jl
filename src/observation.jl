@@ -42,9 +42,9 @@ function log_uniform(x::Vector,bounds::Vector{<:Tuple})
         a, b = bounds[i]
         logp += log((a<=x[i]<=b)*1.0)
     end
-    for k in 1:div(length(x),5)
-        logp += log((x[5k]<=0.5*x[5k-1])*1.0)
-    end
+    #for k in 1:div(length(x),5)
+        #logp += log((x[5k]<=0.5*x[5k-1])*1.0)
+    #end
     return logp
 end
 
