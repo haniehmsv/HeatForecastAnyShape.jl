@@ -2,7 +2,7 @@ using Clustering
 using GaussianMixtures
 
 export classify_by_data_mismatch, classify_by_density, classify_by_gmm, find_gmm,
-        means_and_covariances
+        means_and_covariances, downsample_ensemble
 
 
 """
