@@ -268,3 +268,19 @@ function get_ellipse_coords(μ::Vector,Σ::AbstractMatrix)
     yell = μ[2] .+ sqrtΣ[2,1]*xc .+ sqrtΣ[2,2]*yc
     return xell, yell
 end
+
+function draw_ellipsoid!(ax,μ::Vector,Σ::AbstractMatrix;kwargs...)
+    (size(Σ) == (3,3) && length(μ) == 3) || error("Must be 3-dimensional state")
+    s = svd(Σ)
+    a,b,c = sqrt.(s.S)
+
+    US = s.U*Diagonal([a,b,c])
+    M(u,v) = [a*cos(u)*sin(v), b*sin(u)*sin(v), c*cos(v)]
+    RM(u,v) = s.U * M(u,v) .+ μ
+
+    u, v = range(0, 2π, length=72), range(0, π, length=72)
+    xs, ys, zs = [[p[i] for p in RM.(u, v')] for i in 1:3]
+
+    surface!(ax,xs,ys,zs; kwargs...)
+
+end
