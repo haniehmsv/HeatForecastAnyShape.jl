@@ -11,7 +11,8 @@ export data_histogram, show_singularities, show_singularities!, show_singularity
         show_singularity_samples!, plot_expected_sourcefield, plot_expected_sourcefield!, singularity_ellipses,
         singularity_ellipses!, plot_temperature_field, plot_temperature_field!,
         plot_sensor_data, plot_sensor_data!, plot_sensors!, draw_ellipse_x!, 
-        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords, show_sampling_history!, show_sampling_history, draw_ellipsoid!
+        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords, show_sampling_history!, show_sampling_history,
+        draw_ellipsoid!, plot_heaters!
 
 """
 A palette of colors for plotting
@@ -123,6 +124,22 @@ function plot_expected_sourcefield!(ax,μ::AbstractMatrix,Σ,wts,obs::AbstractOb
     contour!(ax,xg,yg,h;kwargs...)
     xlims!(ax,xlims...)
     ylims!(ax,ylims...)
+end
+
+
+"""
+    plot_heaters!(ax,x::AbstractVector;N=500,kwargs...)
+
+Draws heaters.
+"""
+function plot_heaters!(ax,x::AbstractVector;N=500,kwargs...)
+    theta = collect(range(0,2π,N))
+    c0 = x[1] + 1im*x[2]
+    c1 = x[4]
+    c2 = x[5]
+    r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:(N-1)]
+    pts2 = Point2f[(x,y) for (x,y) in zip(real(r), imag(r))]
+    poly!(ax,pts2;kwargs...)
 end
 
 
