@@ -126,7 +126,8 @@ grid points.
 function TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)
 	@unpack config = obs
     forcing_dict = forcing_region(x,Nθ,config)
-    sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache;is_moving=true)
+    #sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache;is_moving=true)
+	sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
     f, s = solve(prob,sys)
     return f
 end
@@ -143,7 +144,8 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
 	T_sens = zeros(Ny)
 
     forcing_dict = forcing_region(x,Nθ,config)
-    sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache;is_moving=true)
+    #sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache;is_moving=true)
+	sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
     f, s = solve(prob,sys)
 	Tfield = interpolatable_field(f,g)
 	T_sens .= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
