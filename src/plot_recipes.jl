@@ -11,7 +11,8 @@ export data_histogram, show_singularities, show_singularities!, show_singularity
         show_singularity_samples!, plot_expected_sourcefield, plot_expected_sourcefield!, singularity_ellipses,
         singularity_ellipses!, plot_temperature_field, plot_temperature_field!,
         plot_sensor_data, plot_sensor_data!, plot_sensors!, draw_ellipse_x!, 
-        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords, show_sampling_history!, show_sampling_history
+        draw_ellipse_y!, draw_ellipse_z!, get_ellipse_coords, show_sampling_history!, show_sampling_history,
+        draw_ellipsoid!, plot_heaters!
 
 """
 A palette of colors for plotting
@@ -127,6 +128,22 @@ end
 
 
 """
+    plot_heaters!(ax,x::AbstractVector;N=500,kwargs...)
+
+Draws heaters.
+"""
+function plot_heaters!(ax,x::AbstractVector;N=500,kwargs...)
+    theta = collect(range(0,2π,N))
+    c0 = x[1] + 1im*x[2]
+    c1 = x[4]
+    c2 = x[5]
+    r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:(N-1)]
+    pts2 = Point2f[(x,y) for (x,y) in zip(real(r), imag(r))]
+    poly!(ax,pts2;kwargs...)
+end
+
+
+"""
         plot_expected_sourcefield(μ,Σ,obs::AbstractObservationOperator[;xlims=(-2.5,2.5),Nx = 201,ylims=(-2.5,2.5),Ny = 201])
 
 For a given mean state `μ` and state covariance `Σ`, calculate the expected value of the heater
@@ -174,9 +191,9 @@ function singularity_ellipses(μ,Σ,obs::AbstractObservationOperator; kwargs...)
   f
 end
 
-function plot_temperature_field!(ax,x::Vector,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem;kwargs...)
-    @unpack Nθ, g = gridConfig
-    T = TemperatureSolution(x,Nθ,obs,prob,sys)
+function plot_temperature_field!(ax,x::Vector,obs::TemperatureObservations,gridConfig::constructGrids;kwargs...)
+    T = analytical_temperature(x,obs,gridConfig,true)
+    @unpack g = gridConfig
     xg, yg = coordinates(T,g)
     plot_temperature_field!(ax,collect(xg),collect(yg),Matrix(T),obs;kwargs...)
 end
@@ -186,10 +203,10 @@ end
 
 For a given state `x`, calculate the pressure field on a grid. The optional arguments allow one to specify the dimensions of the grid.
 """
-function plot_temperature_field(x::Vector,obs::TemperatureObservations,gridConfig::constructGrids,prob,sys::ILMSystem;kwargs...)
+function plot_temperature_field(x::Vector,obs::TemperatureObservations,gridConfig::constructGrids; kwargs...)
     f = Figure()
     ax = f[1,1] = Axis(f;aspect=DataAspect(),xlabel=L"x",ylabel=L"y")
-    plot_temperature_field!(ax,x,obs,gridConfig,prob,sys;kwargs...)
+    plot_temperature_field!(ax,x,obs,gridConfig;kwargs...)
     f
 end
 
@@ -199,9 +216,9 @@ function plot_temperature_field!(ax,xg::AbstractVector,yg::AbstractVector,T::Mat
 end
 
 
-function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids,prob,sys::ILMSystem; sensor_noise=zero(ystar))
+function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids; sensor_noise=zero(ystar))
     plot_sensor_data!(ax,ystar,obs;sensor_noise=sensor_noise)
-    y_est = observations(x,t,obs,gridConfig,prob,sys)
+    y_est = observations(x,t,obs,gridConfig)
     scatter!(ax,y_est,markersize=15,color=:transparent,strokewidth=1,label="estimate")
 end
 
@@ -267,4 +284,20 @@ function get_ellipse_coords(μ::Vector,Σ::AbstractMatrix)
     xell = μ[1] .+ sqrtΣ[1,1]*xc .+ sqrtΣ[1,2]*yc
     yell = μ[2] .+ sqrtΣ[2,1]*xc .+ sqrtΣ[2,2]*yc
     return xell, yell
+end
+
+function draw_ellipsoid!(ax,μ::Vector,Σ::AbstractMatrix;kwargs...)
+    (size(Σ) == (3,3) && length(μ) == 3) || error("Must be 3-dimensional state")
+    s = svd(Σ)
+    a,b,c = sqrt.(s.S)
+
+    US = s.U*Diagonal([a,b,c])
+    M(u,v) = [a*cos(u)*sin(v), b*sin(u)*sin(v), c*cos(v)]
+    RM(u,v) = s.U * M(u,v) .+ μ
+
+    u, v = range(0, 2π, length=72), range(0, π, length=72)
+    xs, ys, zs = [[p[i] for p in RM.(u, v')] for i in 1:3]
+
+    surface!(ax,xs,ys,zs; kwargs...)
+
 end
