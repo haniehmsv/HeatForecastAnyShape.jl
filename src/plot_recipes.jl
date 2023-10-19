@@ -148,7 +148,7 @@ function plot_outlined_heaters!(ax,x::AbstractVector;N=500,kwargs...)
     c1 = x[4]
     c2 = x[5]
     r = [c0 + c1*exp(1im*theta[i]) + c2*exp(2im*theta[i]) for i in 1:(N-1)]
-    lines!(ax,real(r),imag(r);kwargs)
+    lines!(ax,real(r),imag(r);kwargs...)
 end
 
 
