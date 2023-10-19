@@ -84,6 +84,10 @@ metropolis(chains::MetropolisSolution,nsamp::Integer,logp̃,propvar;β = 5.0.^(r
       metropolis([copy(x[:,end]) for x in chains.data],nsamp,logp̃,[propvar/β[i] for i = 1:numchains(chains)];β = β,kwargs...)
 
 
+
+metropolis(zi::Vector{Vector{Float64}},nsamp::Integer,logp̃,propvar,nchain;β = 5.0.^(range(0,1-nchain,length=nchain)),kwargs...) =
+      metropolis(zi,nsamp,logp̃,[propvar/β[i] for i = 1:nchain];β = β,kwargs...)
+
 function _metropolis(zi::Vector{Vector{T}},nsamp::Integer,logp̃::Function,propvars::Vector{S},burnin,β,process_state) where {T <: Float64, S}
     nchain = length(zi)
     n = length(first(zi))
