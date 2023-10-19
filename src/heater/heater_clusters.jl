@@ -46,7 +46,7 @@ function generate_random_state(xr::Tuple,yr::Tuple,qr::Tuple,c1r::Tuple,c2r::Tup
     zq_prior = random_points_plane(Nq,xr...,yr...)
     strengthq_prior = random_strengths(Nq,qr...)
     c1q_prior = random_coefficient1(Nq,c1r...)
-    c2q_prior = random_coefficient2(Nq,c2r...)
+    c2q_prior = random_coefficient2(Nq,c1q_prior,c2r...)
     return positions_and_strengths_to_state(zq_prior,strengthq_prior,c1q_prior,c2q_prior,config)
 end
 
@@ -146,8 +146,9 @@ function random_coefficient1(N,c1min,c1max)
     return c1
 end
 
-function random_coefficient2(N,c2min,c2max)
+function random_coefficient2(N,c1,c2min,c2max)
     @assert c2max > c2min "rmax must be larger than rmin"
     c2 = c2min .+ (c2max-c2min)*rand(N)
+    c2 .= min.(0.5 .* c1, c2)
     return c2
 end
