@@ -27,8 +27,20 @@ function find_gmm(K::Int,logp̃::Function,obs::AbstractObservationOperator,xseed
     end
     x_decorr_data = downsample_ensemble(chains.data[1],nskip)
     gm = classify_by_gmm(K,x_decorr_data)
-    return gm, x_decorr_data
+    x_last_data_all_chains = [chains.data[i][:,end] for i in 1:nchain]
+    return gm, x_decorr_data, x_last_data_all_chains
+end
 
+"""
+For continued sampling
+"""
+function find_gmm(K::Int,logp̃::Function,obs::AbstractObservationOperator,xseed::Vector{Vector{T}},Ntrial::Array,propvar::Array,x_samples::Union{Array,BasicEnsembleMatrix};nchain = length(xseed), nskip = 100) where {T <: Float64}
+  chains = metropolis(xseed,Ntrial[end],logp̃,propvar[end],nchain;process_state=x->state_filter!(x,obs))
+  x_decorr_data = downsample_ensemble(chains.data[1],nskip)
+  x_samples = hcat(x_samples,x_decorr_data)
+  gm = classify_by_gmm(K,x_samples)
+  x_last_data_all_chains = [chains.data[i][:,end] for i in 1:nchain]
+  return gm, x_samples, x_last_data_all_chains
 end
 
 find_gmm(K::Int,logp̃::Function,obs::AbstractObservationOperator,xseed::Vector,Ntrial::Int,propvar;kwargs...) =
