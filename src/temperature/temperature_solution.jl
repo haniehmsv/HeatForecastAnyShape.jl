@@ -180,7 +180,7 @@ function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
 	return fregion, area_strengths!
 end
 
-function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig,bc_type="Dirichlet")
+function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig;bc_type="Dirichlet")
 	@unpack g, Nθ = gridConfig
     forcing_dict = forcing_region(x,Nθ,config)
     if bc_type == "Dirichlet"
