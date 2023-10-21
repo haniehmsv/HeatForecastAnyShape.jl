@@ -180,22 +180,22 @@ function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
 	return fregion, area_strengths!
 end
 
-function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig;bc_type="Dirichlet")
+function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig,bc_type="Dirichlet")
 	@unpack g, Nθ = gridConfig
     forcing_dict = forcing_region(x,Nθ,config)
-    prob = _construct_problem(g,body,bcdict,forcing_dict,bc_type)
+    if bc_type == "Dirichlet"
+        prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    elseif bc_type == "Neumann"
+        prob = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    end
+    #prob = _construct_problem(g,body,bcdict,forcing_dict,Val(:bc_type))
     sys = construct_system(prob)
     return prob, sys
 end
-function _construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,"Dirichlet")
-    prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
-    return prob
-end
 
-function _construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,"Neumann")
-    prob = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
-    return prob
-end
+#_construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,::Val{:Dirichlet}) = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+
+#_construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,::Val{:Neumann}) = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
 
 
 """
