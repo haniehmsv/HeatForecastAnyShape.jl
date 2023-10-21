@@ -1,6 +1,7 @@
 export setup_prob_and_sys, TemperatureSolution
 
 @ilmproblem DirichletPoisson scalar
+@ilmproblem NeumannPoisson scalar
 
 """
 Constructing extra cache for the problem
@@ -11,7 +12,16 @@ mutable struct DirichletPoissonCache{SMT,CMT,FRT,ST,FT} <: ImmersedLayers.Abstra
     forcing_cache :: FRT
     fb :: ST
     fstar :: FT
- end
+end
+
+mutable struct NeumannPoissonCache{SMT,DVT,VNT,FT,ST,FRT} <: ImmersedLayers.AbstractExtraILMCache
+    S :: SMT
+    dvn :: DVT
+    vn :: VNT
+    fstar :: FT
+    sstar :: ST
+    forcing_cache :: FRT
+end
 
 """
   Extending prob_cache function in the ImmersedLayers Pkg to include the extra cache in the problem, for dispatch purposes
@@ -24,6 +34,16 @@ function ImmersedLayers.prob_cache(prob::DirichletPoissonProblem,base_cache::Bas
     fb = zeros_surface(base_cache)
     fstar = zeros_grid(base_cache)
     DirichletPoissonCache(S,C,forcing_cache,fb,fstar)
+end
+
+function ImmersedLayers.prob_cache(prob::NeumannPoissonProblem,base_cache::BasicILMCache)
+    S = create_CLinvCT(base_cache)
+    dvn = zeros_surface(base_cache)
+    vn = zeros_surface(base_cache)
+    fstar = zeros_grid(base_cache)
+    sstar = zeros_gridcurl(base_cache)
+    forcing_cache = ForcingModelAndRegion(forcing["heating models"],base_cache)
+    NeumannPoissonCache(S,dvn,vn,fstar,sstar,forcing_cache)
 end
 
 """
@@ -69,6 +89,56 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     return f, C^6*s
 end
 
+function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
+    @unpack extra_cache, base_cache, bc, phys_params, forcing = sys
+    @unpack gdata_cache = base_cache
+    @unpack S, dvn, vn, fstar, sstar, forcing_cache = extra_cache
+
+    fill!(fstar,0.0)
+    fill!(sstar,0.0)
+
+    f = zeros_grid(base_cache)
+    s = zeros_gridcurl(base_cache)
+    df = zeros_surface(base_cache)
+    ds = zeros_surface(base_cache)
+
+    # apply_forcing! evaluates the forcing field on the grid and put
+    # the result in the `gdata_cache`.
+    fill!(gdata_cache,0.0)
+    apply_forcing!(gdata_cache,f,0.0,forcing_cache,phys_params)
+
+    # Get the precribed jump and average of the surface normal derivatives
+    prescribed_surface_jump!(dvn,sys)
+    prescribed_surface_average!(vn,sys)
+
+    # Find the potential
+    regularize!(fstar,dvn,base_cache)
+    fstar .+= gdata_cache
+    inverse_laplacian!(fstar,base_cache)
+
+    surface_grad!(df,fstar,base_cache)
+    df .= vn - df
+    df .= -(S\df);
+
+    surface_divergence!(f,df,base_cache)
+    inverse_laplacian!(f,base_cache)
+    f .+= fstar
+
+    # Find the streamfunction
+    surface_curl!(sstar,df,base_cache)
+
+    surface_grad_cross!(ds,fstar,base_cache)
+    ds .= S\ds
+
+    surface_curl_cross!(s,ds,base_cache)
+    s .-= sstar
+    s .*= -1.0
+
+    inverse_laplacian!(s,base_cache)
+
+    return f, s
+end
+
 """
 z coordinates of points on the forcing region
 """
@@ -110,13 +180,23 @@ function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
 	return fregion, area_strengths!
 end
 
-function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig)
+function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig;bc_type="Dirichlet")
 	@unpack g, Nθ = gridConfig
     forcing_dict = forcing_region(x,Nθ,config)
-    prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    prob = _construct_problem(g,body,bcdict,forcing_dict,bc_type)
     sys = construct_system(prob)
     return prob, sys
 end
+function _construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,"Dirichlet")
+    prob = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    return prob
+end
+
+function _construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,"Neumann")
+    prob = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
+    return prob
+end
+
 
 """
 TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)-> Matrix{float64}
