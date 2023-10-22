@@ -37,6 +37,7 @@ function ImmersedLayers.prob_cache(prob::DirichletPoissonProblem,base_cache::Bas
 end
 
 function ImmersedLayers.prob_cache(prob::NeumannPoissonProblem,base_cache::BasicILMCache)
+    @unpack phys_params, forcing = prob
     S = create_CLinvCT(base_cache)
     dvn = zeros_surface(base_cache)
     vn = zeros_surface(base_cache)
