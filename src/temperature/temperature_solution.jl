@@ -183,7 +183,7 @@ function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
 	return fregion, area_strengths!
 end
 
-function get_linear_interpolate(prob::NeumannPoissonCache,sys::ILMSystem,Ts::AbstractVector;sensor_boundary="top")
+function get_linear_interpolate(prob::NeumannPoissonProblem,sys::ILMSystem,Ts::AbstractVector;sensor_boundary="top")
     @unpack base_cache = sys
     @unpack bl, pts = base_cache
     body = bl[1]
