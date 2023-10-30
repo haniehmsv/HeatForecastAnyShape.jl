@@ -9,6 +9,7 @@ using NamedColors
 using Distributions
 using Combinatorics
 using UnPack
+using Dierckx
 
 abstract type AbstractConfig end
 abstract type AbstractGrids end

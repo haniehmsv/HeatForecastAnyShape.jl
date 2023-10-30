@@ -57,6 +57,7 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
 
     f = zeros_grid(base_cache)
     s = zeros_surface(base_cache)
+    df = zeros_surface(base_cache)
 
     # apply_forcing! evaluates the forcing field on the grid and put
     # the result in the `gdata_cache`.
@@ -87,7 +88,7 @@ function ImmersedLayers.solve(prob::DirichletPoissonProblem,sys::ILMSystem)
     inverse_laplacian!(f,base_cache)
     f .+= fstar;
 
-    return f, C^6*s
+    return f, C^6*s, df
 end
 
 function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
@@ -137,7 +138,7 @@ function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
 
     inverse_laplacian!(s,base_cache)
 
-    return f, s
+    return f, s, df
 end
 
 """
@@ -208,7 +209,7 @@ function TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObserv
 	@unpack config = obs
     forcing_dict = forcing_region(x,Nθ,config)
 	sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
-    f, s = solve(prob,sys)
+    f, s, df = solve(prob,sys)
     return f
 end
 
@@ -217,7 +218,7 @@ TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::Temperatur
 solves the temperature poisson equation numerically on grid g, and returns the value of temperature at the
 location of sensors imposed by Nq number of heaters.
 """
-function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob,sys::ILMSystem)
+function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob::DirichletPoissonProblem,sys::ILMSystem)
 	@unpack config, sens = obs
 	@unpack g, cache, Nθ = gridConfig
 	Ny = length(sens)
@@ -225,8 +226,29 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
 
     forcing_dict = forcing_region(x,Nθ,config)
 	sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
-    f, s = solve(prob,sys)
-	Tfield = interpolatable_field(f,g)
+    f, s, df = solve(prob,sys)
+    Tfield = interpolatable_field(f,g)
 	T_sens .= [Tfield(real(sens[j]), imag(sens[j])) for j in 1:Ny]
     return T_sens
 end
+
+function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::TemperatureObservations,prob::NeumannPoissonProblem,sys::ILMSystem)
+	@unpack config, sens = obs
+	@unpack g, cache, Nθ = gridConfig
+    @unpack base_cache = sys
+	Ny = length(sens)
+	T_sens = zeros(Ny)
+    Ts = zeros_surface(base_cache)
+
+    forcing_dict = forcing_region(x,Nθ,config)
+	sys.extra_cache.forcing_cache = ForcingModelAndRegion(forcing_dict["heating models"],sys.base_cache)
+    f, s, df = solve(prob,sys)
+    ImmersedLayers.interpolate!(Ts,f,base_cache)
+    Ts .+= df./2
+	x_node = collect(pts.u)
+    y_node = collect(pts.v)
+    spl = Spline2D(x_node, y_node, collect(Ts))
+	T_sens .= [evaluate(spl, real(sens[j]), imag(sens[j])) for j in 1:Ny]
+    return T_sens
+end
+
