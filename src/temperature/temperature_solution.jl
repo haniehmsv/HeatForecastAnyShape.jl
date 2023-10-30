@@ -249,7 +249,7 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
     Ts .+= df./2
 	x_node = collect(pts.u)
     y_node = collect(pts.v)
-    spl = Spline2D(x_node, y_node, collect(Ts); s=0.1)
+    spl = Spline2D(x_node, y_node, collect(Ts); s=0.05)
 	T_sens .= [evaluate(spl, real(sens[j]), imag(sens[j])) for j in 1:Ny]
     return T_sens, Ts
 end
