@@ -116,11 +116,12 @@ function ImmersedLayers.solve(prob::NeumannPoissonProblem,sys::ILMSystem)
     # Find the potential
     regularize!(fstar,dvn,base_cache)
     fstar .+= gdata_cache
+    fstar = -fstar
     inverse_laplacian!(fstar,base_cache)
 
     surface_grad!(df,fstar,base_cache)
-    df .= vn - df
-    df .= -(S\df);
+    df .= vn + df
+    df .= (S\df);
 
     surface_divergence!(f,df,base_cache)
     inverse_laplacian!(f,base_cache)
