@@ -255,6 +255,6 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
     Ts .+= df./2
     Tfield = get_linear_interpolate(prob,sys,collect(Ts))
     T_sens .= [Tfield(real(sens[j])) for j in 1:Ny]
-    return T_sens, Ts
+    return T_sens
 end
 
