@@ -183,6 +183,17 @@ function _create_fregion_and_force_model(xqk,yqk,qqk,c1qk,c2qk,θ)
 	return fregion, area_strengths!
 end
 
+function get_linear_interpolate(prob::NeumannPoissonCache,sys::ILMSystem,Ts::AbstractVector;sensor_boundary="top")
+    @unpack base_cache = sys
+    @unpack bl, pts = base_cache
+    body = bl[1]
+    pts_x = pts.u
+    pts_y = pts.v
+    points_dict = Dict("bottom"=>pts_x[body.side[1]], "right"=>pts_y[body.side[2]], "top"=>sort(pts_x[body.side[3]]), "left"=>sort(pts_y[body.side[4]]))
+    T_dict = Dict("bottom"=>Ts[body.side[1]], "right"=>Ts[body.side[2]], "top"=>sort(Ts[body.side[3]]), "left"=>sort(Ts[body.side[4]]))
+    return linear_interpolation(points_dict[sensor_boundary], T_dict[sensor_boundary])
+end
+
 function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bcdict::Dict,config::HeaterConfig;bc_type="Dirichlet")
 	@unpack g, Nθ = gridConfig
     forcing_dict = forcing_region(x,Nθ,config)
@@ -191,15 +202,9 @@ function setup_prob_and_sys(x::AbstractVector,gridConfig::constructGrids,body,bc
     elseif bc_type == "Neumann"
         prob = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
     end
-    #prob = _construct_problem(g,body,bcdict,forcing_dict,Val(:bc_type))
     sys = construct_system(prob)
     return prob, sys
 end
-
-#_construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,::Val{:Dirichlet}) = DirichletPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
-
-#_construct_problem(g::PhysicalGrid,body::Union{Body,BodyList},bcdict::Dict,forcing_dict,::Val{:Neumann}) = NeumannPoissonProblem(g,body,scaling=GridScaling,bc=bcdict,forcing=forcing_dict)
-
 
 """
 TemperatureSolution(x::AbstractVector,Nθ::Int64,obs::TemperatureObservations,prob,sys::ILMSystem)-> Matrix{float64}
@@ -248,10 +253,12 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
     f, s, df = solve(prob,sys)
     ImmersedLayers.interpolate!(Ts,f,base_cache)
     Ts .+= df./2
-	x_node = collect(pts.u)
-    y_node = collect(pts.v)
-    spl = Spline2D(x_node, y_node, collect(Ts); kx=5, ky=5, s=0.2)
-	T_sens .= [evaluate(spl, real(sens[j]), imag(sens[j])) for j in 1:Ny]
+	#x_node = collect(pts.u)
+    #y_node = collect(pts.v)
+    #spl = Spline2D(x_node, y_node, collect(Ts); kx=5, ky=5, s=0.2)
+    Tfield = get_linear_interpolate(prob,sys,Ts)
+    T_sens .= [Tfield(real(sens[j])) for j in 1:Ny]
+	#T_sens .= [evaluate(spl, real(sens[j]), imag(sens[j])) for j in 1:Ny]
     return T_sens
 end
 

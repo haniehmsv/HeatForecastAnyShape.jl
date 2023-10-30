@@ -1,6 +1,7 @@
 module HeatForecastAnyShape
 
 using ImmersedLayers
+using Interpolations
 using JLD
 using LinearAlgebra
 using ProgressMeter
