@@ -236,6 +236,8 @@ function TemperatureSolution(x::AbstractVector,gridConfig::constructGrids,obs::T
 	@unpack config, sens = obs
 	@unpack g, cache, Nθ = gridConfig
     @unpack base_cache = sys
+    @unpack pts = base_cache
+    
 	Ny = length(sens)
 	T_sens = zeros(Ny)
     Ts = zeros_surface(base_cache)
