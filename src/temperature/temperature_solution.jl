@@ -189,8 +189,8 @@ function get_linear_interpolate(prob::NeumannPoissonProblem,sys::ILMSystem,Ts::A
     body = bl[1]
     pts_x = pts.u
     pts_y = pts.v
-    points_dict = Dict("bottom"=>pts_x[body.side[1]], "right"=>pts_y[body.side[2]], "top"=>sort(pts_x[body.side[3]]), "left"=>sort(pts_y[body.side[4]]))
-    T_dict = Dict("bottom"=>Ts[body.side[1]], "right"=>Ts[body.side[2]], "top"=>sort(Ts[body.side[3]]), "left"=>sort(Ts[body.side[4]]))
+    points_dict = Dict("bottom"=>pts_x[body.side[1]], "right"=>pts_y[body.side[2]], "top"=>reverse(pts_x[body.side[3]]), "left"=>reverse(pts_y[body.side[4]]))
+    T_dict = Dict("bottom"=>Ts[body.side[1]], "right"=>Ts[body.side[2]], "top"=>reverse(Ts[body.side[3]]), "left"=>reverse(Ts[body.side[4]]))
     return linear_interpolation(points_dict[sensor_boundary], T_dict[sensor_boundary])
 end
 
