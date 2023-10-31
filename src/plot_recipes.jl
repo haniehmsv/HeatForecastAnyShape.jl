@@ -151,7 +151,26 @@ function plot_outlined_heaters!(ax,x::AbstractVector;N=500,kwargs...)
     lines!(ax,real(r),imag(r);kwargs...)
 end
 
+function plot_outlined_heaters!(ax,x::AbstractVector,config::HeaterConfig;N=500,kwargs...)
+    @unpack Nq, state_id = config
+    x_ids = state_id["heater x"]
+    y_ids = state_id["heater y"]
+    q_ids = state_id["heater q"]
+    c1_ids = state_id["heater c1"]
+    c2_ids = state_id["heater c2"]
 
+    xq = x[x_ids]
+    yq = x[y_ids]
+    qq = x[q_ids]
+    c1q = x[c1_ids]
+    c2q = x[c2_ids]
+
+    theta = collect(range(0,2π,N))
+    for k in 1:Nq
+        r = [xq[k] + 1im*yq[k] + c1q[k]*exp(1im*theta[i]) + c2q[k]*exp(2im*theta[i]) for i in 1:(N-1)]
+        lines!(ax,real(r),imag(r);kwargs...)
+    end
+end
 """
         plot_expected_sourcefield(μ,Σ,obs::AbstractObservationOperator[;xlims=(-2.5,2.5),Nx = 201,ylims=(-2.5,2.5),Ny = 201])
 
