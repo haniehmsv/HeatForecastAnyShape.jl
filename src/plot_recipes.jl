@@ -244,9 +244,9 @@ function plot_temperature_field!(ax,xg::AbstractVector,yg::AbstractVector,T::Mat
 end
 
 
-function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids; sensor_noise=zero(ystar))
+function plot_sensor_data!(ax,ystar::Vector,x::Vector,t::Real,obs::AbstractObservationOperator,gridConfig::constructGrids,prob::Union{DirichletPoissonProblem,NeumannPoissonProblem},sys::ILMSystem; sensor_noise=zero(ystar))
     plot_sensor_data!(ax,ystar,obs;sensor_noise=sensor_noise)
-    y_est = observations(x,t,obs,gridConfig)
+    y_est = observations(x,t,obs,gridConfig,prob,sys)
     scatter!(ax,y_est,markersize=15,color=:transparent,strokewidth=1,label="estimate")
 end
 
